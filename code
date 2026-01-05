@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <title>Känslo-tracker</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 700px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      background: #f7f5fb;
+      color: #222;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: #fff;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    select, button, textarea {
+      font: inherit;
+    }
+
+    select, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 0.5rem 1.1rem;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+
+    button.primary {
+      background: #6b4bb8;
+      color: white;
+    }
+
+    button.secondary {
+      background: #eee3ff;
+      color: #3a2470;
+    }
+
+    #tipText {
+      margin: 0.75rem 0;
+      font-style: italic;
+      white-space: pre-wrap;
+    }
+
+    .history-item {
+      margin-bottom: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .history-item small {
+      display: block;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Känslo-tracker 💛</h1>
+
+  <div class="card">
+    <label for="feelingSelect">Hur känner du dig just nu?</label>
+    <select id="feelingSelect">
+      <option value="">– Välj grundkänsla –</option>
+      <option value="ilska">Ilska</option>
+      <option value="rädsla">Rädsla</option>
+      <option value="avsky">Avsky</option>
+      <option value="skam">Skam</option>
+      <option value="sorg">Sorg</option>
+      <option value="glädje">Glädje</option>
+    </select>
+
+    <label for="nuanceSelect">Vilken nyans känner du?</label>
+    <select id="nuanceSelect">
+      <option value="">– Välj nyans –</option>
+    </select>
+
+    <button class="primary" id="showTipBtn">Visa tips</button>
+    <button class="secondary" id="saveBtn">Spara i historik</button>
+
+    <p id="tipText"></p>
+
+    <label for="noteInput">Vill du skriva något mer om hur det känns?</label>
+    <textarea id="noteInput" rows="3" placeholder="Fri text... (valfritt)"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>Din historik</h2>
+    <div id="historyList"></div>
+  </div>
+
+  <script>
+    // ------------------------
+    // Tips per GRUNDKÄNSLA
+    // ------------------------
+    const tipsPerFeeling = {
+      glädje: [
+        "Stanna upp en stund och verkligen känn glädjen i kroppen. Hur känns det? Var känns känslan? Beskriv den för dig själv. Det är alltid lättare att arbeta med de 'bra' känslorna, och det är en bra träning för att öva känslohantering.",
+        "Skriv ner tre saker du är tacksam för just nu. Det behöver inte vara stora saker. Det kan räcka med: 'Idag klev jag upp ur sängen', om det är en jobbig sak att göra. Det behöver inte vara 'Idag gick jag ut och sprang 1 mil och efter det så storstädade jag hela huset.' Små framgångar är också framgångar.",
+        "Dela glädjen med någon – ett meddelande, ett leende eller ett samtal.",
+        "Ofta när man är glad så blir man mer inspirerad. Använd dig av den energin, låt den leda dig."
+      ],
+      sorg: [
+        "Tillåt dig att vara ledsen. Tårar är en form av läkning. Det är okej att gråta och att visa sårbarhet.",
+        "Lägg handen på hjärtat och säg: 'Det är okej att jag känner så här.' Det är starkt att visa och vara i känslan.",
+        "Skriv av dig i några minuter utan att censurera dig. Tänk inte på det du skriver, bara skriv från hjärtat. Det spelar ingen roll om det blir en dikt, en låt eller bara en text, det finns inga rätt eller fel.",
+        "Lyssna på en ledsam låt och tillåt dig att känna och vara i det som kommer. Ibland kan en låt i den sinnesstämning man är i hjälpa att vara i den eller uttrycka känslan. Det blir som en vän som lyssnar.",
+        "Prata med någon du känner dig trygg med. Att prata med någon som lyssnar kan vara till stor hjälp för vilken känsla som helst. Be personen lyssna utan att lösa något.",
+        "Ställ dig själv frågorna: Vad fick mig att känna så här? Är det här något jag behöver ha kvar i mitt liv? Ger det här mig energi eller tar det energi från mig?"
+      ],
+      ilska: [
+        "STOPP! Ta tre djupa, långsamma andetag innan du agerar. Ett mantra som kan vara avgörande i många situationer när man är arg är: 'Man gör ingenting i affekt.' Att tala eller agera i affekt är sällan något som är till ens fördel. Har du varit så arg någon gång att du sagt eller gjort något och sen känt skam för det? Det är att agera i affekt.",
+        "Skriv ett argt brev som du inte skickar – bara för att få ut känslan. Eller bara skriv av dig utan att censurera det. Spara det eller bränn upp det, vad som känns bäst för dig. Låt känslan få komma ut.",
+        "Gå en kort promenad och låt kroppen röra på sig. Skifta fokus en stund. Ett bra verktyg är T.I.P.P. T står för temperatur – doppa ansiktet eller blaska ansiktet med kallt vatten, kroppen reagerar genom att sänka pulsen precis som för dykare när de går under vatten. I står för intensiv träning – träning gör att du skiftar fokus eller får ut den energi som ilska ger dig. P står för att påverka kroppen genom långsammare andning – ta några djupa, långsamma andetag och låt pulsen gå ner. Det sista P står för att påverka kroppen genom avslappning. Om du kan: lägg dig ner på golvet eller sängen och spänn en del av kroppen några sekunder och slappna sedan av, gör så kroppsdel för kroppsdel. Kan du inte ligga ner kan du göra det stående också, till exempel i kassakön.",
+        "Om du är arg för att någon har korsat en gräns hos dig, så sätt en gräns. 'Det här är inte okej för mig, jag blir arg när det här händer.' Var tydlig med vad som inte är okej och vad det gör med dig. Och fortsätter de att gå över din gräns – sätt en konsekvens. Det här är bara exempel för att visa hur man kan sätta gränser.",
+        "Fråga dig själv: Varför är jag arg? Vad är orsaken till känslan? Hur känns känslan? Vad vill känslan få mig att göra? Det här är känslohantering – ta reda på allt du kan om känslan. Har den en färg?",
+        "Gör en sak i taget – välj en miniuppgift att börja med."
+      ],
+      rädsla: [
+        "Fråga dig själv: 'Vad är det värsta som kan hända – och hur sannolikt är det? Är jag i omedelbar fara just nu? Eller är det gamla referenser och erfarenheter som påverkar mig?'",
+        "Skriv ner det du oroar dig för och vad du faktiskt kan påverka. Till exempel: 'Jag är rädd att göra bort mig när jag ska stå och berätta om det här. Det jag kan påverka i denna situation är att träna extra mycket på det jag ska säga så att jag kan det ännu bättre.'",
+        "Testa en kort grounding: fem saker du ser, fyra du kan röra, tre du hör, två du kan lukta, en sak du kan smaka. Här skiftar du fokus från det som känns inuti och fokuserar på det du har runt omkring dig och kan landa bättre i nuet.",
+        "Acceptera känslan och var i den. 'Jag är rädd just nu även om det inte är någon direkt fara omkring mig.' Det är okej att vara rädd. När du är redo kan du börja forska i känslan genom att ställa frågor till dig själv.",
+        "Gör en sak i taget – välj en miniuppgift att börja med."
+      ],
+      skam: [
+        "Lägg märke till var skammen sitter i kroppen. Bröstet, magen, ansiktet? Bara observera utan att ändra. Beskriv känslan så mycket du kan. Hur känns det? Har den en färg? Vad vill den att du ska göra?",
+        "Fråga dig själv: Skäms jag för mig eller för en handling jag gjort? Om det är en handling du gjort mot dig själv – försök att möta dig där du var då. Självvalidera: 'Jag gjorde så gott jag kunde med det jag hade.' Och om det är något du gjort mot någon annan, känn efter om en ursäkt skulle lätta för dig. Inte för att fixa allt, utan för att ta ansvar i din egen takt, när det känns tryggt.",
+        "Säg tyst till dig själv: 'Jag är inte min skam. Jag känner skam, men jag är inte skam.'",
+        "Om du orkar: sätt ord på skammen högt, tyst för dig själv. Exempel: 'Just nu skäms jag för att jag känner mig svag/otillräcklig/annorlunda.'",
+        "Fråga dig själv: Är det här verkligen mitt att bära – eller har någon annan lagt den här skammen på mig?",
+        "Tänk på en person du tycker om som hade känt likadant. Vad hade du sagt till hen? Kan du säga något liknande till dig själv?",
+        "Testa att andas långsamt in på 4, hålla på 4, andas ut på 6 – tre gånger, medan du låter känslan få finnas."
+      ],
+      avsky: [
+        "Lägg märke till vad kroppen försöker säga. Avsky är ofta en stark gränssignal. Var sitter den? Magen, bröstet, ansiktet, halsen? Bara observera utan att döma.",
+        "Fråga dig själv: Vad i det här känns fel för mig? Ibland är det en värdering som blivit trampad på, ibland en energi som inte är i linje med dig. Sätt ord på vad som skaver – inte varför det 'borde' eller 'inte borde' kännas så.",
+        "Tillåt dig att ta ett mentalt eller fysiskt steg tillbaka. Avsky är en känsla som ofta vill skapa distans. Det är helt okej att följa den impulsen mjukt och ge dig själv utrymme.",
+        "Skriv ner exakt vad i situationen som väcker avskyn. En mening räcker. Detta hjälper dig att skilja på känslan i kroppen och tolkningen i hjärnan.",
+        "Validera dig själv: 'Det är okej att den här känslan finns.' Avsky är inte ett tecken på att du är elak eller dömande – det är en signal om att något inte matchar dina behov, gränser eller värderingar.",
+        "Om avskyn handlar om något du har gjort själv – möt det med nyfikenhet, inte skam. Fråga: 'Vad i mig reagerar så starkt just nu?' Det är ofta en del av dig som försöker skydda dig från något som kändes fel eller olikt dig.",
+        "Om avskyn gäller någon annan eller en situation – fundera på om det handlar om energi, gränser eller värderingar. Du behöver inte agera direkt. Bara förstå: 'Avskyn berättar något om vad jag inte vill ha nära.'"
+      ]
+    };
+
+    // ------------------------
+    // Tips per NYANS (hittills: skam + misslyckad, skam + skuld)
+    // ------------------------
+    const tipsPerNuance = {
+      skam: {
+        misslyckad: [
+          "Ställ dig själv frågan: Har jag misslyckats med något jag gjort, eller är det en gammal erfarenhet eller referens från tidigare relationer som speglas här?",
+          "Vad skulle jag säga till en vän som bar på den här känslan? Var din egen bästa vän och var inte så hård mot dig själv. Vi är ofta mycket snällare mot andra än mot oss själva.",
+          "Surfa på känslan och utforska den utan att fly. Hur känns den? Var sitter den? Har den en färg eller form? Vad vill känslan få dig att göra eller undvika?",
+          "Fundera på vad som orsakade känslan. Är det något som hänt nyligen, eller är det en trigger från något som hänt tidigare? Hjärnan kopplar lätt nuet till gamla erfarenheter när något liknar en tidigare situation.",
+          "Fundera på om dina krav på dig själv är rimliga. Skam över att ha 'misslyckats' kommer ofta från för höga krav. Skulle du ställa samma krav på någon annan? Om inte, varför ställer du dem på dig själv?",
+          "Normalisera att allt inte alltid går som man tänker. Misslyckanden är en naturlig del av livet och innebär inte att du är fel. Ofta handlar skammen mer om rädsla för hur andra uppfattar oss än om det som faktiskt hände.",
+          "Självvalidera dig själv: 'Jag gjorde det bästa jag kunde med det jag hade just då.' Du kan alltid göra annorlunda nästa gång, men just då gjorde du så gott du kunde, och det är okej."
+        ],
+        skuld: [
+          "Börja med att skilja på skuld och ansvar. Skuld säger att du är fel, ansvar säger att du kan göra annorlunda framåt. Känn efter vilken av dem som faktiskt är sann här.",
+          "Fråga dig själv: Är detta min skuld att bära, eller har jag lärt mig att ta ansvar för sådant som egentligen inte var mitt? Många av oss bär skuld för sådant andra egentligen orsakat.",
+          "Sätt ord på skulden utan att värdera den. Säg tyst: 'Just nu känner jag skuld.' Att benämna känslan kan minska dess grepp.",
+          "Fundera på vad skulden försöker säga dig. Vill den att du tar ansvar, reparerar något, eller vill den bara påminna om gamla mönster som inte längre gäller?",
+          "Om skulden handlar om något du gjort mot dig själv – möt dig själv där du var då. Bekräfta att du gjorde det bästa du kunde i den situationen, med den kunskap du hade.",
+          "Om skulden gäller någon annan, fundera försiktigt på om ett litet steg mot att reparera kan vara hjälpsamt – när du är redo. Det kan vara ett samtal, ett 'jag är ledsen' eller att förändra ditt beteende framåt.",
+          "Påminn dig om att du får växa. Skuld kan vara en signal om att du bryr dig. Det betyder inte att du måste straffa dig själv – det betyder att du har hjärta och värme nog att vilja göra bättre."
+        ],
+        generad: [
+          "Lägg märke till vad som händer i kroppen när du känner dig generad. Värme, rodnad, snabbare puls? Beskriv det utan att döma. Det är kroppens sätt att säga att du känner dig sedd — inte att du gjort fel.",
+          "Fråga dig själv: 'Skulle jag döma någon annan för det här?' Ofta är det vi skäms över pyttesmå saker som andra knappt reagerar på.",
+          "Påminn dig om att generad är en av de mest mänskliga reaktionerna som finns. Det betyder inte att något var fel — bara att du bryr dig om hur du uppfattas.",
+          "Normalisera känslan: 'Just nu känner jag mig generad, och det är okej. Det går över.' Att säga det högt eller tyst för dig själv minskar intensiteten.",
+          "Fundera på vad som egentligen triggade känslan. Var det situationen i sig, eller rädslan för att bli bedömd? När du hittar roten blir känslan mindre överväldigande.",
+          "Tänk på att det som känns stort för dig ofta är litet för andra. Människor är mer upptagna av sina egna känslor än av vad andra gör eller säger.",
+          "Validera dig själv: 'Jag gjorde inget fel. Jag reagerade bara mänskligt.' Känslan av genans säger mer om din omtanke än om något misstag."
+        ],
+        ånger: [
+          "Ta tre långsamma andetag och lägg handen på bröstet eller magen. Säg tyst: 'Jag låter kroppen släppa lite av trycket.' Ånger sätter sig ofta som spänning i kroppen.",
+          "Skriv i två minuter utan att stanna: 'Det jag önskar att jag kunde göra annorlunda är…'. Låt allt komma ut utan att censurera. Det hjälper dig bortom den första självkritiska rösten.",
+          "Föreställ dig dig själv som 80 år och fråga: 'Hur skulle jag se på det här då?' Äldre versionen av dig har ofta ett mjukare och mer realistiskt perspektiv.",
+          "Ställ reparationsfrågan: 'Finns det något litet steg jag kan ta som förflyttar mig 1% i rätt riktning?' Ånger behöver inte lösas stort — små steg räcker.",
+          "Påminn dig själv: Ånger uppstår när värderingar och handlingar inte matchar. Det betyder att du har värderingar — inte att du är fel.",
+          "Lägg handen på hjärtat eller kinden och säg tyst: 'Jag är ledsen att du bär på det här. Jag är här med dig.' Detta lugnar skamreaktionen och mjukar upp självdömandet.",
+          "Fråga dig själv: 'Vad vill jag ta med mig från den här erfarenheten till nästa gång?' Ånger kan bli en kompass istället för ett straff."
+        ],
+        "dåligt samvete": [
+          "Ställ frågan: 'Är det jag känner proportionerligt till det som hände?' Dåligt samvete förstoras ofta av gamla mönster, inte av nuet.",
+          "Påminn dig själv: 'Vad var min intention?' Dåligt samvete uppstår ofta när utfallet blev annorlunda än du hoppades — inte för att du hade onda avsikter.",
+          "Skriv en kort dialog med känslan: 'Dåligt samvete, vad försöker du säga mig?' Svara sedan. Ofta vill känslan hjälpa dig — inte straffa dig.",
+          "Fråga: 'Är detta verkligen mitt ansvar, eller bär jag detta för någon annans skull?' Många får dåligt samvete för andras reaktioner, inte för sitt eget beteende.",
+          "Placera båda händerna runt revbenen och andas långsamt: 4 sek in, 4 sek håll, 6 sek ut. Det lugnar systemet som triggas vid skuld och samvete.",
+          "Fråga dig själv: 'Behöver något repareras — eller behöver jag förlåta mig själv?' Dåligt samvete kan vilja skapa handling eller mjukhet.",
+          "Föreställ dig att situationen är löst och fråga: 'Vad gjorde jag som hjälpte mig hit?' Det visar riktningen framåt utan att fastna i skam."
+        ],
+        blyg: [
+          "Välj en trygg tanke innan du går in i en situation som gör dig blyg, exempelvis: 'Jag får ta min plats i min takt.' Det minskar skammens intensitet.",
+          "Träna micro-exponering: ett litet hej, en fråga, eller en sekund längre ögonkontakt. Små steg bygger trygghet utan att överväldiga.",
+          "Påminn dig själv: 'Blyghet betyder inte att något är fel — det betyder att jag känner in energi.' Det är en styrka, inte en brist.",
+          "Sänk axlarna och ta ett mjukt andetag. Blyghet triggar ofta en frysrespons som kroppen kan bryta genom att slappna av en enda muskel.",
+          "Fråga dig själv: 'Vad är det jag är rädd att andra ska se?' Att sätta ord på det gör känslan mindre laddad.",
+          "Säg tyst: 'Jag får vara mjuk. Jag får vara liten ibland. Det betyder inte att jag är svag.' Det mjukar upp skammen.",
+          "Identifiera vad som faktiskt känns tryggt för dig socialt — små grupper, en person i taget, eller mer tystnad. Rätt miljö minskar både skam och blyghet."
+        ],
+        undvikande: [
+          "Fråga dig själv: 'Vad försöker undvikandet skydda mig från?' Ofta handlar det inte om situationen, utan om rädslan för skamkänslan som kommer efteråt.",
+          "Sänk ribban ordentligt: gör uppgiften så liten att den känns möjlig — en minut, ett ord, ett 'jag återkommer'. När tröskeln sänks minskar undvikandet.",
+          "Placera båda fötterna i golvet och ta ett långsamt andetag. Säg tyst: 'Jag får närma mig i min takt.' Det lugnar flyktreaktionen.",
+          "Gör en tvåstegsplan: 'Vad är det minsta jag kan göra?' och 'Vad händer efter det?' När hjärnan ser nästa steg minskar paniken.",
+          "Föreställ dig att du ger råd till någon du tycker om. Vad hade du sagt? Du kommer ge mildare och mer realistiska råd än du ger dig själv.",
+          "Fråga dig själv: 'Vilket av mina värden tar jag hand om om jag gör detta?' Att koppla handlingar till värderingar minskar undvikande.",
+          "Säg tyst: 'Det är okej att jag undviker. Jag lär mig. Jag kommer närmare.' När undvikandet inte skammas minskar det automatiskt."
+        ]
+      },
+      ilska: {
+        irriterad: [
+          "Gör en en-sekunds-paus innan du reagerar. En sekund räcker för att bromsa affektimpulsen och minska irritationen.",
+          "Fråga dig själv: 'Är jag irriterad på just detta, eller är det här sista droppen efter mycket annat?' Irritation visar ofta på underliggande behov.",
+          "Skaka händerna, rulla axlarna eller ta fem snabba andetag genom näsan. Irritation är ofta övertryck i nervsystemet — låt kroppen ventilera först.",
+          "Fråga: 'Vad skulle göra det här lättare just nu?' Irritation signalerar ofta att du behöver paus, space, tydlighet eller minskade stimuli.",
+          "Skriv en mening: 'Det som irriterade mig var…'. Bara att formulera det minskar intensiteten.",
+          "Fråga dig själv: 'Kommer detta spela roll om en vecka?' Det hjälper hjärnan att skala ner situationen.",
+          "Säg tyst: 'Jag får vara irriterad. Det betyder att något behöver uppmärksamhet.' Irritation är information, inte ett fel."
+        ],
+        frustrerad: [
+          "Fråga dig själv: 'Vilken del av det här är det som frustrerar mig mest?' Frustration känns total, men orsaken är ofta bara en specifik del.",
+          "Identifiera det minsta framåtrörelsesteget du kan ta. Frustration uppstår när något tar stopp — ett litet steg bryter låsningen.",
+          "Byt miljö i 60 sekunder. Gå till ett annat rum, öppna ett fönster eller res dig upp. Miljöbyte ger hjärnan ett pattern interrupt och minskar frustrationen.",
+          "Skriv ner tre saker: Vad stoppar mig? Vad saknar jag? Vad behöver jag? När hinder blir tydliga känns situationen mindre överväldigande.",
+          "Säg tyst: 'Jag behöver inte lösa allt nu — jag behöver bara ta nästa steg.' Frustration kommer ofta av orimliga krav på helhetslösningar.",
+          "Skaka kroppen i 10 sekunder: händer, armar, axlar. Frustration är låst energi och shaking hjälper att släppa den fysiskt.",
+          "Säg tyst: 'Jag känner så här för att jag bryr mig.' Frustration är ett tecken på engagemang, inte ett misslyckande."
+        ],
+        kränkt: [
+         "Fråga dig själv: 'Vad var det som faktiskt sårade mig?' Försök ringa in exakt ord, handling eller beteende. Det gör känslan tydligare och mindre överväldigande.",
+         "Påminn dig själv: 'Att någon kränkte mig betyder inte att jag är mindre värd.' Kränkning handlar om den andras beteende – inte om ditt värde.",
+         "Fråga: 'Vilken gräns eller vilket behov blev överkört här?' Ilska kopplad till kränkthet pekar ofta på bristande respekt eller trygghet.",
+         "Jorda kroppen: spänn käkarna i tre sekunder och släpp, pressa fötterna mot golvet. Kränkning aktiverar försvar – kroppen behöver landa först.",
+         "Gör en speglingscheck: 'Handlar detta verkligen om mig, eller speglar personen sitt eget?' Många kränkningar är projektioner.",
+         "Fråga dig själv: 'Vill jag sätta en gräns, ta avstånd eller bara ta hand om mig själv just nu?' Du måste inte agera direkt.",
+         "Säg tyst: 'Jag har rätt att bli behandlad med respekt.' Att återta värdigheten lugnar både ilska och kränkthet."
+        ],
+        avundsjuk: [
+         "Fråga dig själv: 'Vad är det jag egentligen längtar efter här?' Avundsjuka pekar ofta på ett behov eller en dröm, inte på att du är fel.",
+         "Skilj på inspiration och jämförelse. Fråga: 'Beundrar jag något, eller jämför jag mitt inre med någon annans yta?' Jämförelse gör ont, inspiration visar riktning.",
+         "Skriv en mening: 'Just nu är jag på väg mot …'. Att återkoppla till din egen resa minskar avundens kraft.",
+         "Andas långsamt in i bröstet eller magen och gör utandningen lite längre än inandningen. Avundsjuka kan skapa kroppslig spänning som behöver släppas.",
+         "Påminn dig själv: 'Avundsjuka är mänskligt.' Känslan betyder inte att du är missunnsam, utan att något är viktigt för dig.",
+         "Fråga: 'Finns det ett litet steg jag kan ta mot det jag önskar, istället för att fastna i jämförelsen?' Handling lugnar avundens ilska.",
+         "Säg tyst: 'Någon annans framgång tar inte ifrån mig min.' Det stärker självvärdet och minskar jämförelsen."
+        ],
+        förödmjukad: [
+         "Räta på ryggen, pressa fötterna mot golvet och ta ett djupt andetag. Förödmjukelse slår ofta mot kroppen, och hållningen kan hjälpa dig att återta inre styrka.",
+         "Sätt ord på känslan utan att mildra den: 'Jag kände mig förödmjukad när …'. Att erkänna känslan rakt av minskar trycket att explodera senare.",
+         "Påminn dig själv: 'Att bli förödmjukad betyder inte att jag är mindre värd.' Det betyder att någon passerade en gräns eller använde makt.",
+         "Tillåt ilskan som kommer efter förödmjukelse, men välj riktning. Fråga: 'Vill jag skydda mig, sätta en gräns eller samla mig just nu?'",
+         "Gör något litet som är helt ditt — byt plats, drick vatten eller gå undan en stund. Det signalerar till nervsystemet att du inte är fast.",
+         "Fråga dig själv: 'Vem såg detta, och vems åsikt spelar egentligen roll för mig?' Ofta förstoras känslan av en inre publik.",
+         "Säg tyst: 'Jag förlorade inte min värdighet — någon försökte ta den.' Det hjälper ilskan att landa i styrka istället för självattack."
+        ],
+        ursinnig: [
+         "Gör en säkerhetscheck: 'Är jag i affekt just nu?' Ursinne behöver paus, inte analys. Skapa avstånd från människor eller situationer tills intensiteten sjunker.",
+         "Bryt affekten fysiskt på ett säkert sätt: spänn hela kroppen i fem sekunder och släpp, stampa i golvet eller pressa händerna mot en vägg. Ursinne är hög energi som behöver utlopp.",
+         "Andas in genom näsan i 4 sekunder, håll i 2 och andas ut genom munnen i 8 sekunder. Lång utandning hjälper nervsystemet att varva ner.",
+         "Minska stimuli runt dig. Sänk ljud, ljus och intryck. Ursinne förstärks av stimuli och lugn miljö hjälper kroppen att reglera.",
+         "Påminn dig själv: 'Jag tar inga beslut och säger inget viktigt när jag är ursinnig.' Fördröjning skyddar dig från handlingar du kan ångra.",
+         "Säg tyst: 'Det här är extrem ilska — inte hela sanningen.' Att namnge tillståndet skapar avstånd till känslan.",
+         "När intensiteten har minskat, fråga: 'Vilken gräns blev övertrampad eller vad behövde skyddas?' Ursinne pekar ofta på djupa gränsbrott."
+        ],
+        bitter: [
+         "Identifiera ett område där bitterheten är som starkast, till exempel relation, arbete eller familj. Bitterhet är ofta knuten till ett specifikt sammanhang, inte hela livet.",
+         "Skriv ner vad som hände, vad det kostade dig och vad du inte fick. Gör det som ett bokslut, inte för att älta utan för att avsluta.",
+         "Säg tyst: 'Jag fortsätter inte bära detta idag.' Bitterhet tappar kraft när den möts av ett medvetet val istället för analys.",
+         "Bryt mönstret fysiskt genom att byta plats, tempo eller riktning. Bitterhet är ofta fastlåst energi som behöver rörelse.",
+         "Fråga: 'Vad tar detta ifrån mig just nu?' Bitterhet lever på upprepning och energiläckage.",
+         "Välj en liten handling som ger dig kraft, till exempel att sätta en gräns, avsluta något eller göra något som stärker dig.",
+         "Säg tyst eller högt: 'Det här definierar mig inte längre.' Det markerar riktning utan att förneka det som varit."
+        ]
+      },
+      rädsla: {
+        oro: [
+         "Säg tyst: 'Detta är oro – inte ett faktum.' Oro handlar oftast om framtiden, inte om det som händer just nu.",
+         "Skriv ner exakt vad du oroar dig för och stäng sedan anteckningen. Det signalerar till hjärnan att oron är parkerad för stunden.",
+         "Fråga dig själv: 'Är detta något jag kan påverka just nu?' Om ja, välj ett litet steg. Om nej, släpp det tillfälligt.",
+         "Flytta uppmärksamheten från tankarna till kroppen. Känn fötterna mot golvet, händerna eller ryggen mot stolen i några sekunder.",
+         "Begränsa informationsintaget. Oro förstärks av för mycket input från nyheter, sociala medier eller grubblande samtal.",
+         "Säg tyst: 'Jag märker att jag oroar mig, och jag behöver inte lösa allt nu.' Att tillåta oron minskar ofta dess grepp.",
+         "Gör något konkret i nuet, som att dricka vatten, diska en kopp eller ta tre lugna andetag. Handling bryter orons cirklar."
+        ],
+        nervös: [
+         "Säg tyst: 'Jag är nervös för att något är viktigt för mig.' Nervositet är ofta ett tecken på engagemang, inte fara.",
+         "Rör kroppen lätt genom att skaka loss armarna, rulla axlarna eller sträcka på benen. Nervositet vill röra sig, inte hållas inne.",
+         "Andas lugnt in genom näsan och andas ut lite längre än du andas in. Längre utandning hjälper kroppen att släppa spänning.",
+         "Säg tyst: 'Det här är bara den här stunden.' Nervositet vill ofta kännas större än situationen faktiskt är.",
+         "Fråga dig själv: 'Vad är det allra första jag behöver göra?' Att fokusera på första steget lugnar nervsystemet.",
+         "Jorda dig genom sinnena. Lägg märke till ett ljud, en färg eller känslan av fötterna mot golvet.",
+         "Säg tyst: 'Jag kan vara nervös och ändå göra det här.' Du behöver inte vänta på att nervositeten ska försvinna."
+        ],
+        skräckslagen: [
+         "Se dig omkring och fråga: 'Är jag i faktisk fara just nu?' Om inte, säg tyst: 'Jag är rädd, men jag är trygg just nu.'",
+         "Pressa fötterna mot golvet eller håll i något stadigt. Skräck aktiverar flykt eller frys och kroppen behöver fysisk förankring.",
+         "Andas in genom näsan i två sekunder och andas ut genom munnen i fyra sekunder. Upprepa tills kroppen börjar lugna sig.",
+         "Säg tyst eller högt: 'Jag är här. Det är nu. Jag är inte ensam.' Rösten kan hjälpa nervsystemet att hitta trygghet.",
+         "Begränsa intryck genom att sänka blicken och minska ljud eller ljus om möjligt. Skräck förstärks av för mycket stimuli.",
+         "Försök inte analysera eller lösa något just nu. Din enda uppgift är att låta rädslan passera.",
+         "När intensiteten minskat, ge kroppen eftervård: drick vatten, sitt ner eller linda in dig i något varmt. Skräck tar mycket energi."
+        ],
+        överväldigad: [
+         "Minska intrycken direkt genom att stänga ner ljud, skärm eller krav. Överväldigande rädsla lugnas när mängden input minskar.",
+         "Säg tyst: 'Jag behöver inte hantera allt. Bara nästa lilla del.' Att dela upp helheten minskar panik.",
+         "Tillåt dig själv en kort paus utan skuld. Paus är reglering, inte flykt.",
+         "Förankra kroppen genom att sitta med ryggen mot ett stöd, hålla i en kopp eller känna stolen under dig. Kroppen behöver signalen att den bärs.",
+         "Skriv ner högst tre saker som faktiskt behöver göras nu. Allt annat får vänta.",
+         "Säg tyst: 'Det här får vara tillräckligt just nu.' Medvetet sänkta krav lugnar nervsystemet.",
+         "Påminn dig själv: Du behöver inte känna dig lugn för att gå vidare. Du kan vara överväldigad och ändå ta ett litet steg."
+        ],
+        hotad: [
+         "Se dig omkring där du är just nu. Är du i faktisk fara och behöver fly eller försvara dig, eller liknar situationen något från tidigare erfarenheter där kroppen reagerar på gamla referenser? Försök avgöra om hotet finns här och nu.",
+         "Påminn dig själv: Kroppens reaktion är verklig, men känslan av hot behöver inte betyda att faran är verklig just nu.",
+         "Förankra dig fysiskt genom att pressa fötterna mot golvet, luta ryggen mot något stabilt eller hålla i ett föremål.",
+         "Stanna upp och minska rörelse och stimuli runt dig om möjligt. För mycket intryck kan förstärka hotkänslan.",
+         "Andas långsamt in genom näsan och ännu långsammare ut genom munnen. Lång utandning signalerar säkerhet till nervsystemet.",
+         "Säg tyst: 'Jag kan ta ett steg tillbaka. Jag behöver inte agera just nu.' Att påminna om valmöjlighet kan minska intensiteten.",
+         "När känslan släppt lite, ge kroppen eftervård genom att dricka vatten, sätta dig ner eller vila en stund."
+        ],
+        värdelös: [
+         "Säg tyst: 'Jag känner mig värdelös, men det betyder inte att jag är det.' Känslan är verklig, men slutsatsen är det inte.",
+         "Fråga dig själv: 'Vems röst låter det som när jag tänker så här om mig själv?' Ofta är det gamla mönster som aktiveras.",
+         "Påminn dig själv: 'Jag är inte värdelös som person – jag känner mig osäker i den här situationen.' Att göra känslan mer specifik minskar dess kraft.",
+         "Skriv eller tänk tre konkreta saker du faktiskt klarar av, har gjort eller hanterat, även om de känns små.",
+         "Fråga: 'Vad hade jag sagt till en vän som kände så här?' Försök att rikta samma ord till dig själv.",
+         "Flytta uppmärksamheten till något stabilt utanför tankarna, som stolen du sitter på, golvet under fötterna eller ett föremål i rummet.",
+         "Säg tyst: 'Mitt värde försvinner inte för att jag känner rädsla eller osäkerhet.' Du är mer än den här stunden."
+        ],
+        skrämd: [
+         "Säg tyst: 'Jag blev skrämd – det är en naturlig reaktion.' Att normalisera reaktionen minskar sekundär rädsla.",
+         "Skaka loss armar och ben lätt eller sträck på kroppen. Skrämdhet lämnar ofta kvar spänning som behöver släppa.",
+         "Ta ett djupt andetag in och andas ut långsamt, gärna som en suck. Utandningen hjälper kroppen att förstå att faran är över.",
+         "Titta runt och namnge tyst några saker du ser i rummet. Det hjälper nervsystemet att landa i nuet igen.",
+         "Säg tyst: 'Det är över nu.' Kroppen behöver ibland höra det tydligt för att släppa reaktionen.",
+         "Märk om du håller andan eller spänner dig och låt kroppen mjukna istället. Skrämdhet klingar av snabbare när spänningen släpper.",
+         "Fortsätt lugnt med det du gjorde innan. Att gå vidare utan analys hjälper kroppen att återgå till balans."
+        ]
+      },
+      avsky: {
+        motvilja: [
+         "Känn efter var motviljan sitter i kroppen, till exempel i magen, bröstet eller axlarna. Motvilja är ofta kroppens första, lågmälda gränssignal.",
+         "Säg tyst: 'Jag behöver inte vilja detta just nu.' Motvilja förstärks ofta när vi pressar oss själva.",
+         "Fråga dig själv: 'Vad i detta känns fel för mig?' Utforska vad som skaver utan att värdera eller analysera.",
+         "Ta ett litet steg tillbaka, mentalt eller fysiskt, om du kan. Motvilja vill ofta ha utrymme snarare än konfrontation.",
+         "Fundera på om detta är något du gör för att du vill eller för att du känner att du borde. Motvilja uppstår ofta i spänningen mellan plikt och vilja.",
+         "Du behöver inte förstå eller rättfärdiga känslan. Motvilja räcker som information i sig.",
+         "Säg tyst: 'Mitt nej är giltigt, även om jag inte inte kan förklara det.' Att respektera motvilja bygger självtillit."
+        ],
+        äcklad: [
+         "Säg tyst: 'Min kropp reagerar starkt just nu.' Äckel är en instinktiv skyddsreaktion, inte något du väljer.",
+         "Skapa fysisk distans om möjligt genom att ta ett steg tillbaka, vända bort blicken eller lämna situationen en stund.",
+         "Rensa kroppen sensoriskt genom att tvätta händerna, skölja ansiktet, byta kläder eller andas frisk luft.",
+         "Undvik att tvinga dig igenom känslan. Du behöver inte stå ut, vänja dig eller pressa bort stark avsky.",
+         "Påminn dig själv: 'Att jag känner äckel betyder inte att jag dömer – det betyder att något känns fel för mig.'",
+         "Du behöver inte förstå varför just nu. Vänta tills kroppen lugnat sig innan du utforskar vad som triggade reaktionen.",
+         "Säg tyst: 'Jag får skydda mig från det som känns fel.' Äckel är ofta ett tydligt gränsskydd."
+        ],
+        förakt: [
+         "Notera hur du mentalt tar avstånd, till exempel genom kyla, hårdhet eller ironi. Förakt skapar distans för att skydda något sårbart.",
+         "Fråga dig själv: 'Vad har urholkats här – respekt, tillit eller tålamod?' Förakt uppstår ofta efter långvariga övertramp.",
+         "Påminn dig själv: 'Jag kan ogilla beteenden utan att reducera en människa.' Det minskar inre spänning.",
+         "Lägg märke till om du mentalt talar inför en publik eller behöver ha rätt. Förakt förstärks av inre publik.",
+         "Sänk intensiteten utan att sänka gränsen. Behåll ditt nej, men välj ett neutralt och sakligt inre språk.",
+         "Välj avstånd med värdighet om det behövs. Att ta ett steg tillbaka kan vara respekt både för dig och den andra.",
+         "Säg tyst: 'Jag väljer klarhet framför förakt.' Klarhet ger kraft utan att förhärda."
+        ],
+        ogillande: [
+         "Säg tyst: 'Jag ogillar detta, och det är okej.' Alla känslor behöver inte analyseras eller försvaras.",
+         "Påminn dig själv: Du kan ogilla något utan att det behöver bli en konflikt. Allt som skaver kräver inte åtgärd.",
+         "Fråga dig själv om det är beteendet, tonen, ämnet eller situationen du ogillar. Att avgränsa minskar irritation.",
+         "Välj låg energi. Du behöver inte engagera dig fullt ut – ibland räcker det att minska exponering eller delta ytligt.",
+         "Släpp behovet av att ha rätt. Ogillande behöver inte rättfärdigas eller förklaras.",
+         "Se om det går att justera istället för att undvika helt, till exempel genom att byta ämne, ta paus eller ändra tempo.",
+         "Säg tyst: 'Jag kan välja mer av det som känns rätt för mig.' Att välja bort är också självomsorg."
+        ],
+        avsmak: [
+         "Lägg märke till den subtila reaktionen, som ett inre nej eller minskad lust. Avsmak kan vara lågmäld men tydlig.",
+         "Notera för dig själv: 'Det här är inte i linje med mig.' Avsmak handlar ofta om preferens, inte om rätt eller fel.",
+         "Påminn dig själv: 'Att jag känner avsmak betyder inte att någon annan gör fel.' Det minskar inre spänning.",
+         "Välj mild distans om det behövs. Mindre engagemang eller kortare exponering kan räcka.",
+         "Fråga dig själv om det är tonen, energin, värderingen eller innehållet som skaver. Tydlighet lugnar.",
+         "Justera istället för att konfrontera. Att byta fokus, ämne eller aktivitet kan vara tillräckligt.",
+         "Lägg märke till tanken: 'Jag får lita på min inre kompass.' Avsmak kan vara ett mjukt sätt att navigera rätt."
+        ],
+        tveksam: [
+         "Tillåt obeslutsamheten. Tveksamhet betyder inte att du är otydlig, utan att du kan behöva mer tid eller information.",
+         "Påminn dig själv om att du inte måste bestämma dig just nu. Att vänta är också ett val.",
+         "Fråga dig själv vad i situationen som känns okej och vad som inte gör det. Tveksamhet rymmer ofta både ja och nej.",
+         "Lyssna på kroppens små signaler. Känn efter om kroppen lutar svagt framåt eller bakåt inför det du står inför.",
+         "Om det är möjligt, testa ett försiktigt steg istället för att ta ett stort beslut. Små tester kan minska tveksamhet.",
+         "Fundera på om tveksamheten handlar om rädsla inför något nytt eller om det är en preferens som inte matchar dig.",
+         "Notera för dig själv: 'Jag får ta beslut i min egen takt.' Att sänka tempot kan ge klarhet."
+        ],
+        förfärad: [
+         "Stanna upp och orientera dig. Se dig omkring och notera var du är, vad som är verkligt just nu och att du är här.",
+         "Notera för dig själv: 'Det jag såg eller hörde väckte stark avsky.' Du behöver inte förklara eller förstora reaktionen.",
+         "Skapa omedelbar distans om möjligt genom att ta ett steg bort, byta fokus eller lämna situationen.",
+         "Ta ett djupt andetag in och andas ut långsamt flera gånger. Långsam andning hjälper kroppen att landa efter chock.",
+         "Påminn dig själv: 'Det här går emot mina värderingar – och det är okej att reagera.' Förfäran signalerar tydliga inre gränser.",
+         "Vänta med tolkning och handling. Du behöver inte agera direkt – låt reaktionen sjunka först.",
+         "Efteråt, gör något vardagligt och konkret som att dricka vatten, röra på kroppen eller byta miljö för att stabilisera."
+        ]
+      },
+      sorg: {
+        sårbar: [
+         "Tillåt skörheten i stunden. Sårbarhet betyder inte svaghet, utan att du är extra mottaglig just nu.",
+         "Sänk kraven på dig själv. Allt behöver inte fungera som vanligt när du känner dig sårbar.",
+         "Skydda dig från onödigt brus genom att välja bort sådant som dränerar eller stressar.",
+         "Var varsam med kroppen. Gör något mjukt som att ta en varm dusch, linda in dig i en filt eller hålla en hand över hjärtat.",
+         "Om du orkar, sätt ord på känslan genom att skriva eller notera för dig själv: 'Just nu känner jag mig sårbar.'",
+         "Känn efter om du behöver trygg närhet eller trygg ensamhet. Båda behoven är giltiga.",
+         "Notera för dig själv: 'Det är okej att vara här just nu.' Sårbar sorg vill bli mött, inte bortskyndad."
+        ],
+        ensam: [
+         "Notera för dig själv: 'Jag känner mig ensam just nu.' Att erkänna känslan är första steget till lindring.",
+         "Påminn dig själv: Att känna sig ensam betyder inte att man är övergiven. Det är en känsla, inte ett faktum.",
+         "Om du orkar, välj lågtröskelkontakt som ett meddelande, ett hej eller att bara vara nära någon utan krav.",
+         "Ge dig själv sällskap genom att göra något omhändertagande, som att dricka te, tända ett ljus eller lyssna på lugn musik.",
+         "Lägg handen på hjärtat eller magen och andas lugnt. Kroppslig närvaro kan skapa en känsla av kontakt inifrån.",
+         "Tillåt längtan efter närhet utan att döma den. Längtan är ett mänskligt behov.",
+         "Notera för dig själv: 'Den här känslan får komma och gå.' Ensamhet behöver inte definiera dig."
+        ],
+        maktlös: [
+         "Notera för dig själv att det här är något du inte kan kontrollera just nu. Att erkänna maktlöshet kan vara en lättnad.",
+         "Påminn dig själv: 'Att jag inte kan förändra detta betyder inte att det är mitt fel.' Maktlöshet bär ofta på omotiverad skuld.",
+         "Återta ett litet val du faktiskt kan påverka just nu, som tempo, plats, paus eller andning.",
+         "Förankra kroppen genom att sitta stadigt, känna golvet under fötterna eller hålla i något fast.",
+         "Tillåt sorgen över det som inte går att ändra. Du behöver inte vara stark eller konstruktiv just nu.",
+         "Fundera på vad som händer om du släpper kampen mot verkligheten för den här stunden. Mindre motstånd kan minska smärtan.",
+         "Notera för dig själv: 'Jag gör så gott jag kan i en svår situation.' Det är tillräckligt."
+        ],
+        skör: [
+         "Minska kraven till ett minimum. När du känner dig skör är det okej att bara göra det nödvändigaste.",
+         "Skydda dig från starka intryck som intensiva samtal, nyheter eller höga ljud. Skörhet behöver låg stimulans.",
+         "Var extra varsam med kroppen genom att röra dig långsamt, vila mer och lyssna på trötthetssignaler.",
+         "Tillåt känslor att komma utan att behöva förstå dem. Skör sorg vill få finnas utan analys.",
+         "Skapa ett tryggt här genom att göra din närmiljö lugn och omhändertagande, till exempel med mjukt ljus eller en filt.",
+         "Sänk tempot i tankarna. Du behöver inte tänka klart eller fatta beslut just nu.",
+         "Notera för dig själv: 'Jag är skör just nu, och jag får ta hand om mig därefter.'"
+        ],
+        olycklig: [
+         "Notera för dig själv att livet just nu känns tungt eller glädjelöst. Du behöver inte förklara varför för att känslan ska vara giltig.",
+         "Släpp kravet på att vara positiv. Olycklig sorg får finnas utan att vändas eller lösas.",
+         "Fråga dig själv: 'Vad kan jag göra som inte gör det här värre?' Ibland räcker det att undvika sådant som dränerar.",
+         "Sök små pauser i tyngden, som vila, frisk luft eller en stunds distraktion. Det handlar om lättnad, inte lycka.",
+         "Håll fast vid grundläggande struktur som sömn, mat och rörelse. Struktur kan bära när känslan är låg.",
+         "Påminn dig själv om att känslor rör sig över tid, även när det inte känns så. Olycklighet är inte ett permanent tillstånd.",
+         "Notera för dig själv: 'Jag tar mig igenom den här tiden, steg för steg.' Det räcker."
+        ],
+        bedrövad: [
+         "Tillåt tyngden att finnas. Det är okej att känna sig bedrövad utan att något behöver lösas just nu.",
+         "Sakta ner tempot medvetet. Gör saker långsammare, en i taget. Bedrövad sorg behöver långsamhet.",
+         "Ge utrymme för det som saknas. Om känslan handlar om förlust eller längtan, låt den få finnas en stund.",
+         "Välj stillsam närvaro, som att sitta i tystnad, titta ut genom ett fönster eller lyssna på lugn musik.",
+         "Tillåt känslan utan att sjunka ner i den. Du kan bära bedrövadhet varsamt och samtidigt vara närvarande.",
+         "Gör något litet och omhändertagande, som att dricka något varmt, vila eller ta en lugn dusch.",
+         "Notera för dig själv: 'Det här är sorg, och jag möter den så varsamt jag kan.'"
+        ],
+        nedstämd: [
+         "Sänk ribban rejält. Nedstämdhet innebär ofta låg energi, och det betyder inte att du är lat eller misslyckas.",
+         "Gör något litet som ger rörelse, som att sträcka på kroppen, byta rum eller ta en kort promenad.",
+         "Fokusera på det grundläggande som sömn, mat och vätska. Det enkla kan bära när orken är låg.",
+         "Avgränsa dagen i korta tidsblock. Fråga dig själv vad som är rimligt den närmaste timmen.",
+         "Minska självkraven. Du behöver inte prestera dig ur nedstämdhet.",
+         "Tillåt neutralitet. Du behöver inte känna glädje – det räcker att inte må sämre.",
+         "Notera för dig själv: 'Det här är en nedstämd period, inte hela jag.' Känslotillstånd förändras över tid."
+        ]
+      },
+      glädje: {
+        optimistisk: [
+         "Lägg märke till vad i dig som just nu lutar framåt eller tror på något bättre. Optimism börjar ofta som en stilla rörelse.",
+         "Ta ett ögonblick och känn hur optimismen känns i kroppen. Att stanna upp hjälper känslan att bli mer än en tanke.",
+         "Tillåt framtidstankar utan att rusa. Optimism handlar om riktning, inte om att ha alla svar.",
+         "Gör något litet som speglar känslan, som att planera något, ta ett första steg eller skriva ner en idé.",
+         "Dela glädjen om det känns rätt. Optimism kan växa när den delas, men behöver inte visas upp.",
+         "Tillåt både ljus och realism. Du får hoppas utan att förneka det som är svårt.",
+         "Notera för dig själv: 'Det finns möjligheter framför mig.'"
+        ],
+        lycklig: [
+         "Stanna kvar i känslan en stund istället för att skynda vidare. Att stanna upp hjälper lyckan att sjunka in.",
+         "Känn efter var i kroppen lyckan känns, som i bröstet, magen eller ansiktet. Det gör känslan mer påtaglig.",
+         "Tillåt enkelhet. Lycka behöver inte vara stor eller dramatisk, den kan vara lugn och vardaglig.",
+         "Påminn dig själv om att du inte behöver hålla fast vid stunden. Lycka får komma och gå.",
+         "Gör något som mjukt förlänger känslan, som att andas djupt, le eller fortsätta i lugn takt.",
+         "Ta in omgivningen genom att lägga märke till något du ser, hör eller känner just nu.",
+         "Notera för dig själv: 'Just nu känner jag mig lycklig, och det får vara tillräckligt.'"
+        ],
+        stolt: [
+         "Lägg märke till vad du faktiskt är stolt över utan att tona ner det. Du behöver inte förklara eller ursäkta känslan.",
+         "Känn hur stoltheten tar plats i kroppen, som upprätt hållning, värme i bröstet eller stadga.",
+         "Påminn dig själv om att stolthet inte kräver perfektion. Du kan vara stolt över mod, ansträngning eller att du försökte.",
+         "Erkänn att din resa är din egen. Det du är stolt över är giltigt just för dig.",
+         "Dela stoltheten om det känns rätt, men känn inget krav på att visa upp den för andra.",
+         "Låt stoltheten bli näring framåt genom att känna hur den ger dig kraft och riktning.",
+         "Notera för dig själv: 'Jag får vara stolt över mig själv.'"
+        ],
+        kärleksfull: [
+         "Lägg märke till hur kärleksfullheten känns i kroppen, som mjukhet, lugn eller värme. Kroppslig närvaro fördjupar känslan.",
+         "Känn efter om känslan vill riktas mot någon annan, mot dig själv eller bara få finnas fritt. Alla riktningar är giltiga.",
+         "Tillåt enkel omtanke. Kärleksfullhet behöver inte uttryckas stort, små handlingar räcker.",
+         "Påminn dig själv om att du också får vara mottagare av din egen kärleksfullhet. Självomsorg är en del av känslan.",
+         "Kom ihåg att kärleksfullhet och gränser kan samexistera. Du kan vara varm och samtidigt tydlig.",
+         "Dela känslan om det känns rätt, genom ett ord, en beröring eller närvaro. Kärleksfullhet växer ofta när den delas frivilligt.",
+         "Notera för dig själv: 'Jag låter kärleksfullheten få ta plats.'"
+        ],
+        hoppfull: [
+         "Lägg märke till det lilla hoppet som finns, även om det är lågmält. Hoppfullhet kan börja som en stilla öppning.",
+         "Förankra hoppet i nuet genom att känna efter vad som just nu ger en känsla av möjlighet eller riktning.",
+         "Tillåt osäkerhet att finnas kvar. Du kan vara hoppfull utan att veta hur det ska bli.",
+         "Gör något litet som stödjer hoppet, som ett försiktigt steg eller en förberedelse i rätt riktning.",
+         "Påminn dig om tidigare situationer som blev bättre, även om det tog tid. Minnet av överlevnad kan stärka hopp.",
+         "Håll tempot mjukt. Hopp växer ofta utan stress eller krav på snabba resultat.",
+         "Notera för dig själv: 'Jag tillåter hopp att finnas, även i det som är oklart.'"
+        ],
+        inspirerad: [
+         "Fånga impulsen direkt genom att skriva ner idén, känslan eller bilden som dök upp, även om den är ofärdig.",
+         "Sänk kravet på genomförande. Du behöver inte göra något stort av inspirationen just nu.",
+         "Känn efter var energin vill ta vägen. Inspiration kan vilja bli skapande, rörelse, ord eller handling.",
+         "Ge inspirationen lite utrymme genom att skapa en stund med färre störningar om möjligt.",
+         "Tillåt lekfullhet. Inspiration behöver inte vara seriös eller perfekt för att vara värdefull.",
+         "Gör ett litet steg i linje med känslan, som att skissa, skriva några rader eller testa något nytt.",
+         "Notera för dig själv: 'Jag låter inspirationen guida mig, utan att pressa den.'"
+        ],
+        euforisk: [
+         "Tillåt känslan fullt ut. Eufori är en legitim känsla och behöver inte dämpas av rädsla för att vara för mycket.",
+         "Lägg märke till hur euforin känns i kroppen, som puls, värme eller rörelse. Kroppslig medvetenhet hjälper energin att flöda jämnt.",
+         "Jorda dig samtidigt som du njuter genom att känna fötterna mot golvet, ta ett djupt andetag eller luta dig mot något stadigt.",
+         "Undvik att fatta stora beslut i stunden. Njut av känslan och låt större beslut vänta tills energin är jämnare.",
+         "Kanalisera energin mjukt genom rörelse, skapande, skratt eller uttryck. Eufori vill röra sig.",
+         "Dela glädjen med någon som kan ta emot den utan att dämpa eller förstärka den på ett ohållbart sätt.",
+         "Notera för dig själv: 'Jag kan njuta av den här känslan och ändå ta hand om mig.'"
+        ]
+
+      }
+    };
+
+    // ------------------------
+    // DOM-element
+    // ------------------------
+    document.addEventListener("DOMContentLoaded", () => {
+    const feelingSelect = document.getElementById("feelingSelect");
+    const showTipBtn = document.getElementById("showTipBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const tipText = document.getElementById("tipText");
+    const noteInput = document.getElementById("noteInput");
+    const historyList = document.getElementById("historyList");
+    const nuanceSelect = document.getElementById("nuanceSelect");
+
+  console.log("feelingSelect:", feelingSelect);
+  console.log("nuanceSelect:", nuanceSelect);
+    // ------------------------
+    // Nyanser per grundkänsla
+    // ------------------------
+   const nuances = {
+  ilska: ["irriterad","frustrerad","kränkt","avundsjuk","ursinnig","bitter"],
+  rädsla: ["oro","nervös","skräckslagen","överväldigad","värdelös","hotad","skrämd"],
+  avsky: ["motvilja","äcklad","förakt","ogillande","avsmak","tveksam","förfärad"],
+  skam: ["misslyckad","skuld","generad","ånger","dåligt samvete","blyg","undvikande"],
+  sorg: ["sårbar","ensam","maktlös","skör","olycklig","bedrövad","nedstämd"],
+  glädje: ["optimistisk","lycklig","stolt","kärleksfull","hoppfull","inspirerad","euforisk"]
+};
+    // När man väljer grundkänsla – uppdatera nyanser
+ function resetNuanceSelect() {
+    nuanceSelect.innerHTML = '<option value="">– Välj nyans –</option>';
+    nuanceSelect.value = "";
+    nuanceSelect.disabled = true;
+  }
+
+  resetNuanceSelect();
+
+  feelingSelect.addEventListener("change", () => {
+    const value = feelingSelect.value;
+    console.log("Vald grundkänsla:", value);
+
+    resetNuanceSelect();
+    if (!value || !nuances[value]) return;
+
+    nuances[value].forEach((nuance) => {
+      const option = document.createElement("option");
+      option.value = nuance;
+      option.textContent = nuance.charAt(0).toUpperCase() + nuance.slice(1);
+      nuanceSelect.appendChild(option);
+    });
+
+    nuanceSelect.disabled = false;
+  });
+});
+
+    // ------------------------
+    // Historik-funktioner
+    // ------------------------
+    function loadHistory() {
+      const raw = localStorage.getItem("kansloTrackerHistory");
+      if (!raw) return [];
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        console.error("Kunde inte läsa historik:", e);
+        return [];
+      }
+    }
+
+    function saveHistory(history) {
+      localStorage.setItem("kansloTrackerHistory", JSON.stringify(history));
+    }
+
+    function renderHistory() {
+      const history = loadHistory();
+      historyList.innerHTML = "";
+
+      if (history.length === 0) {
+        historyList.textContent = "Ingen historik ännu. Börja med att spara en känsla.";
+        return;
+      }
+
+      history.forEach(entry => {
+        const div = document.createElement("div");
+        div.className = "history-item";
+
+        const dateText = new Date(entry.timestamp).toLocaleString("sv-SE");
+        div.innerHTML = `
+          <strong>${entry.feeling}${entry.nuance ? " – " + entry.nuance : ""}</strong>
+          <small>${dateText}</small>
+          ${entry.tip ? `<div>${entry.tip.replace(/\n/g, "<br>")}</div>` : ""}
+          ${entry.note ? `<div><em>${entry.note}</em></div>` : ""}
+        `;
+        historyList.appendChild(div);
+      });
+    }
+
+    // ------------------------
+    // Visa tips
+    // ------------------------
+    showTipBtn.addEventListener("click", () => {
+      const feeling = feelingSelect.value;
+      const nuance = nuanceSelect.value;
+
+      if (!feeling) {
+        tipText.textContent = "Välj en grundkänsla först.";
+        return;
+      }
+
+      let tips = [];
+
+      // Först: försök hitta tips för nyans
+      if (
+        nuance &&
+        tipsPerNuance[feeling] &&
+        tipsPerNuance[feeling][nuance] &&
+        tipsPerNuance[feeling][nuance].length > 0
+      ) {
+        tips = tipsPerNuance[feeling][nuance];
+      } else {
+        // annars: fall tillbaka till grundkänslan
+        tips = tipsPerFeeling[feeling] || [];
+      }
+
+      if (!tips || tips.length === 0) {
+        tipText.textContent = "Inga tips hittades för den här känslan ännu.";
+        return;
+      }
+
+      // Välj upp till 3 unika slumpade tips
+      const maxCount = Math.min(3, tips.length);
+      const usedIndices = new Set();
+      const selectedTips = [];
+
+      while (selectedTips.length < maxCount) {
+        const randomIndex = Math.floor(Math.random() * tips.length);
+        if (!usedIndices.has(randomIndex)) {
+          usedIndices.add(randomIndex);
+          selectedTips.push(tips[randomIndex]);
+        }
+      }
+
+      tipText.textContent = selectedTips.map(t => "• " + t).join("\n\n");
+    });
+
+    // ------------------------
+    // Spara i historik
+    // ------------------------
+    saveBtn.addEventListener("click", () => {
+      const feeling = feelingSelect.value;
+      if (!feeling) {
+        alert("Välj en grundkänsla innan du sparar.");
+        return;
+      }
+
+      const history = loadHistory();
+      const entry = {
+        feeling,
+        nuance: nuanceSelect.value || "",
+        tip: tipText.textContent || "",
+        note: noteInput.value.trim(),
+        timestamp: Date.now()
+      };
+      history.unshift(entry);
+      saveHistory(history);
+      renderHistory();
+
+      noteInput.value = "";
+    });
+
+    // Init
+    renderHistory();
+  </script>
+</body>
+</html>
